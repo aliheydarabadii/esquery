@@ -518,3 +518,45 @@ func (q TermsSetQuery) Map() map[string]interface{} {
 		},
 	}
 }
+
+// geoFilterParams represents a query of type "geo_distance", as described in:
+// https://www.elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-geo-distance-query.html
+type GeoFilter struct {
+	params geoFilterParams
+	filed  string
+}
+
+func GeoFilterFunc(distance string, MiddleCentroid []float64, filed string) *GeoFilter {
+	return &GeoFilter{
+		params: geoFilterParams{
+			Distance:       distance,
+			MiddleCentroid: MiddleCentroid,
+		},
+		filed: filed,
+	}
+}
+
+type geoFilterParams struct {
+	Distance       string    `structs:"distance,omitempty"`
+	MiddleCentroid []float64 `structs:"location,omitempty"`
+}
+
+func (g *GeoFilter) Distance(distance string) *GeoFilter {
+	g.params.Distance = distance
+	return g
+}
+func (g *GeoFilter) MiddleCentroid(middleCentroid []float64) *GeoFilter {
+	g.params.MiddleCentroid = middleCentroid
+	return g
+}
+
+func (g *GeoFilter) Map() map[string]interface{} {
+	m := structs.Map(g.params)
+	m[g.filed] = m["location"]
+	delete(m, "location")
+	response := map[string]interface{}{
+		"geo_distance": m}
+
+	return response
+
+}
